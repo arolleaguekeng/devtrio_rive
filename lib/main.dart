@@ -39,28 +39,35 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    rootBundle.load('assets/animations/dash_flutter_muscot.riv').then(
-      (data) async {
-        try {
-          final file = RiveFile.import(data);
-          final artboard = file.mainArtboard;
-          var controller =
-              StateMachineController.fromArtboard(artboard, 'birb');
-          if (controller != null) {
-            artboard.addController(controller);
-            isDance = controller.findSMI('dance');
-            isLookUp = controller.findSMI('look up');
-          }
-          setState(() => riveArtboard = artboard);
-        } catch (e) {
-          print(e);
-        }
-      },
-    );
+    _loadRiveFile();
   }
 
-  void toggleDance(bool newValue) {
-    setState(() => isDance!.value = newValue);
+  Future<void> _loadRiveFile() async {
+    final data =
+        await rootBundle.load('assets/animations/dash_flutter_muscot.riv');
+    try {
+      final file = RiveFile.import(data);
+      final artboard = file.mainArtboard;
+      var controller = StateMachineController.fromArtboard(artboard, 'birb');
+      if (controller != null) {
+        artboard.addController(controller);
+        isDance = controller.findSMI('dance');
+        isLookUp = controller.findSMI('look up');
+      }
+      setState(() => riveArtboard = artboard);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void _onDropdownChanged(String? newValue) {
+    if (newValue == 'Look Up') {
+      isLookUp?.fire();
+    } else if (newValue == 'Dance') {
+      isDance?.value = true;
+    } else if (newValue == 'Stop') {
+      isDance?.value = false;
+    }
   }
 
   @override
@@ -73,34 +80,18 @@ class _HomePageState extends State<HomePage> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  Expanded(
-                    child: Rive(
-                      artboard: riveArtboard!,
-                    ),
-                  ),
-                    Container(
+                  Expanded(child: Rive(artboard: riveArtboard!)),
+                  Container(
                     margin: const EdgeInsets.only(bottom: 90),
                     child: DropdownButton<String>(
-                      value: 'Stop', // Default value
-                      items: <String>[
-                      'Look Up',
-                      'Dance', 
-                      'Stop'
-                      ].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                      if (newValue == 'Look Up') {
-                        isLookUp!.fire();
-                      } else if (newValue == 'Dance') {
-                        isDance!.value = true;
-                      } else if (newValue == 'Stop') {
-                        isDance!.value = false;
-                      }
-                      },
+                      value: 'Stop',
+                      items: ['Look Up', 'Dance', 'Stop']
+                          .map((value) => DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              ))
+                          .toList(),
+                      onChanged: _onDropdownChanged,
                     ),
                   ),
                 ],
